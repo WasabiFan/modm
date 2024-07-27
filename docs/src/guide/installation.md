@@ -323,54 +323,67 @@ avrdude --version
 The [Windows Subsystem for Linux 2][wsl2] allows you to run a Linux distribution
 in parallel to Windows. For a pure Windows installation see [above](#windows).
 
-Install Ubuntu-22.04 LTS as WSL2 distribution:
-See the [general WSL doc][wsl-install], but as of this writing
-`wsl --list --online` will not list Ubuntu 22.04.1 LTS, but it is
-[available in the Microsoft Store][windows-store-ubuntu-22-04-1-lts].
-Install it from there via mouse clicks.
-Make sure the WSL2 instance is running by opening a terminal via start menu.
+Install the Ubuntu-22.04 LTS WSL2 distribution using the following command:
+`wsl --install -d Ubuntu-22.04`. See the [general WSL doc][wsl-install] for more
+details.
+
+Make sure the WSL2 instance is running by opening a terminal session for your chosen
+distro. You can access it in the selection menu of Windows Terminal.
 
 Physically attach your microcontroller development board or your debugger to a
 USB port and [bridge the USB hub to which the device is attached][wsl-connect-usb].
 Also [bridge the USB device to Linux][connect-usb] using [usbipd][usbipd]:
 
 ```powershell
-PS C:\Windows\system32> usbipd wsl list
+PS C:\Windows\system32> usbipd list
 BUSID  VID:PID    DEVICE                                STATE
-3-2    1bcf:0005  USB-Eingabegerät                      Not attached
-3-3    0483:374b  ST-Link Debug, USB-...                Attached - Ubuntu-22.04
-4-1    138a:003d  Synaptics FP Sensors (WBF) (PID=003d) Not attached
-4-3    04f2:b370  HP HD Webcam [Fixed]                  Not attached
+3-2    1bcf:0005  USB-Eingabegerät                      Not shared
+3-3    0483:374b  ST-Link Debug, USB-...                Not shared
+4-1    138a:003d  Synaptics FP Sensors (WBF) (PID=003d) Not shared
+4-3    04f2:b370  HP HD Webcam [Fixed]                  Not shared
 ```
 
 Check the BUSID parameter and use the one that corresponds to your device in
 further commands. In this example it is the `3-3`.
 
 ```powershell
-PS C:\Windows\system32> usbipd wsl attach --busid 3-3
-usbipd: info: Using default distribution 'Ubuntu-22.04'.
+PS C:\Windows\system32> usbipd bind --busid 3-3
+
+PS C:\Windows\system32> usbipd list
+BUSID  VID:PID    DEVICE                                STATE
+3-2    1bcf:0005  USB-Eingabegerät                      Not shared
+3-3    0483:374b  ST-Link Debug, USB-...                Shared
+4-1    138a:003d  Synaptics FP Sensors (WBF) (PID=003d) Not shared
+4-3    04f2:b370  HP HD Webcam [Fixed]                  Not shared
+
+PS C:\Windows\system32> usbipd attach --wsl --busid 3-3
+usbipd: info: Using WSL distribution 'Ubuntu-22.04' to attach; the device will be available in all WSL 2 distributions.
+usbipd: info: Using IP address 172.29.48.1 to reach the host.
+
+PS C:\Windows\system32> usbipd list
+BUSID  VID:PID    DEVICE                                STATE
+3-2    1bcf:0005  USB-Eingabegerät                      Not shared
+3-3    0483:374b  ST-Link Debug, USB-...                Attached
+4-1    138a:003d  Synaptics FP Sensors (WBF) (PID=003d) Not shared
+4-3    04f2:b370  HP HD Webcam [Fixed]                  Not shared
 ```
 
-!!! tip "Unreliable connection"
-    If the connection is not reliable, it might be necessary to detach/attach
-    several times until the connection is established:
+!!! tip "Device in error state"
+    If you receive a "Device in error state" message from the "attach" command,
+    try adding "--force" to the "bind" command **and rebooting** before retrying
+	the "attach":
 
     ```powershell
-    PS C:\Windows\system32> usbipd wsl detach --busid 3-3
-    PS C:\Windows\system32> usbipd wsl attach --busid 3-3
-    usbipd: info: Using default distribution 'Ubuntu-22.04'.
+    PS C:\Windows\system32> usbipd bind --force --busid 3-3
     ```
 
-Either reboot the machine or be lucky that a combination of the following
-commands is sufficient:
+Check "lsusb" from within your WSL2 distribution. If the new device is not listed,
+try rebooting. Also try re-discovering present USB devices:
 
 ```sh
 sudo udevadm trigger
 sudo udevadm control --reload
 ```
-
-Remove the USB connector, reattach it, then issue the command
-`usbipd wsl attach --busid 3-3`.
 
 On WSL2 Linux follow the [Linux installation instructions](#linux) and
 additionally install a terminal emulator such as _picocom_:
