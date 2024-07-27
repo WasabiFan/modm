@@ -399,31 +399,18 @@ sudo udevadm control --reload
     ```
 
     If you do not see "ttyUSB" or "ttyACM" nodes, the driver for your chip
-    is likely missing.
-
-    WSL kernels in the 5.15 series seem to ship with the ftdi driver compiled as a
-    standalone module and do not include any udev rules to load it for supported devices
-    ([Issue][wsl-ftdi-kernel-module]).
-     
-    For FTDI-style devices you can also check `lsmod` for the following kernel
-    modules:
+    is likely not configured to load automatically. Apply the provided udev
+	rules from OpenOCD to enable automatic module load:
 
     ```
-    $ sudo lsmod
-    Module                  Size  Used by
-    ftdi_sio               49152  0
-    usbserial              36864  1 ftdi_sio
-    ```
+	$ sudo apt update
+    $ sudo apt install openocd
+	$ sudo cp /lib/udev/rules.d/60-openocd.rules /etc/udev/rules.d/
+	```
 
-    If these are not listed, forcibly load the kernel module:
-    
-    ```
-    sudo modprobe ftdi_sio
-    ```
-
-    This must be done on every WSL2 virtual machine reboot. You may wish to add a udev
-    rule to automatically load it, re-compile the kernel with ftdi_sio as a builtin, or
-    [upgrade to the 6.x kernel series](wsl-upgrade-kernel-v6) which does this automatically.
+    _Note: WSL kernels in the 5.15 series ship with the ftdi driver	compiled as
+	a standalone module ([Issue][wsl-ftdi-kernel-module]). On 6.x kernels, it is
+    built-in. This means the udev rules are not required on 6.x kernels._
 
 On WSL2 Linux follow the [Linux installation instructions](#linux) and
 additionally install a terminal emulator such as _picocom_:
