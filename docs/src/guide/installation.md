@@ -368,6 +368,9 @@ BUSID  VID:PID    DEVICE                                STATE
 4-3    04f2:b370  HP HD Webcam [Fixed]                  Not shared
 ```
 
+Note that you will need to re-run the "attach" command each time you restart the
+WSL virtual machine and/or your PC.
+
 !!! tip "Device in error state"
     If you receive a "Device in error state" message from the "attach" command,
     try adding "--force" to the "bind" command **and rebooting** before retrying
@@ -377,13 +380,50 @@ BUSID  VID:PID    DEVICE                                STATE
     PS C:\Windows\system32> usbipd bind --force --busid 3-3
     ```
 
-Check "lsusb" from within your WSL2 distribution. If the new device is not listed,
+Run `lsusb` from within your WSL2 distribution. If the new device is not listed,
 try rebooting. Also try re-discovering present USB devices:
 
 ```sh
 sudo udevadm trigger
 sudo udevadm control --reload
 ```
+
+!!! tip "Loading the FTDI driver(s)"
+    Check to confirm that there is an associated TTY device for the serial
+    controller:
+
+    ```
+    $ ls /dev/tty*
+    /dev/ttyUSB0
+    /dev/ttyUSB1
+    ```
+
+    If you do not see "ttyUSB" or "ttyACM" nodes, the driver for your chip
+    is likely missing.
+
+    WSL kernels in the 5.15 series seem to ship with the ftdi driver compiled as a
+    standalone module and do not include any udev rules to load it for supported devices
+    ([Issue][wsl-ftdi-kernel-module]).
+     
+    For FTDI-style devices you can also check `lsmod` for the following kernel
+    modules:
+
+    ```
+    $ sudo lsmod
+    Module                  Size  Used by
+    ftdi_sio               49152  0
+    usbserial              36864  1 ftdi_sio
+    ```
+
+    If these are not listed, forcibly load the kernel module:
+    
+    ```
+    sudo modprobe ftdi_sio
+    ```
+
+    This must be done on every WSL2 virtual machine reboot. You may wish to add a udev
+    rule to automatically load it, re-compile the kernel with ftdi_sio as a builtin, or
+    [upgrade to the 6.x kernel series](wsl-upgrade-kernel-v6) which does this automatically.
 
 On WSL2 Linux follow the [Linux installation instructions](#linux) and
 additionally install a terminal emulator such as _picocom_:
@@ -437,5 +477,7 @@ picocom --baud 115200 --imap lfcrlf --echo /dev/ttyACM0
 [wsl2]: https://docs.microsoft.com/en-us/windows/wsl/about#what-is-wsl-2
 [wsl-connect-usb]: https://docs.microsoft.com/en-us/windows/wsl/connect-usb
 [wsl-install]: https://docs.microsoft.com/en-us/windows/wsl/install
+[wsl-ftdi-kernel-module]: https://github.com/microsoft/WSL/issues/11346
+[wsl-upgrade-kernel-v6]: https://learn.microsoft.com/en-us/community/content/wsl-user-msft-kernel-v6
 [wsl-vscode]: https://docs.microsoft.com/en-us/windows/wsl/tutorials/wsl-vscode
 [wsl-vscode-integrated-terminal]: https://code.visualstudio.com/docs/remote/wsl-tutorial#_integrated-terminal
