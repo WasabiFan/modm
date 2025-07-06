@@ -4,6 +4,6 @@
     <option name="modm:build:build.path">../../../build/nucleo_f401re/blink</option>
   </options>
   <modules>
-    <module>modm:build:scons</module>
+    <module>modm:build:cmake</module>
   </modules>
 </library>
