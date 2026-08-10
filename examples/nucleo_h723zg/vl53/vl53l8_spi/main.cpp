@@ -53,7 +53,7 @@ main()
 	transport.resetSensor();
 
 	SpiMaster::connect<Sck::Sck, Mosi::Mosi, Miso::Miso>();
-	SpiMaster::initialize<Board::SystemClock, 2.2_MHz>();
+	SpiMaster::initialize<Board::SystemClock, 2_MHz>();
 
 	example1(&transport);
 	example2(&transport);

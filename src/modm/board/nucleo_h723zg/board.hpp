@@ -27,25 +27,25 @@ namespace Board
 /// @{
 using namespace modm::literals;
 
-/// STM32H723ZG running at 550MHz from PLL clock generated from 8 MHz HSE
+/// STM32H723ZG running at 520MHz from PLL clock generated from 8 MHz HSE
 struct SystemClock
 {
 	static constexpr uint32_t Hse = 8_MHz;
 
-	// Max 550MHz
-	static constexpr uint32_t SysClk = 550_MHz;
+	// 550MHz additionally requires CPUFREQ_BOOST and disables TCM ECC.
+	static constexpr uint32_t SysClk = 520_MHz;
 	static constexpr uint32_t Pll1Q = SysClk / 4;
 	static constexpr uint32_t Pll2Q = 120_MHz;
-	// Max 550MHz
+	// Max 520MHz without CPUFREQ_BOOST
 	static constexpr uint32_t Hclk = SysClk / 1; // D1CPRE
 	static constexpr uint32_t Frequency = Hclk;
-	// Max 275MHz
+	// Configured for 260MHz
 	static constexpr uint32_t Ahb = Hclk / 2; // HPRE
 	static constexpr uint32_t Ahb1 = Ahb;
 	static constexpr uint32_t Ahb2 = Ahb;
 	static constexpr uint32_t Ahb3 = Ahb;
 	static constexpr uint32_t Ahb4 = Ahb;
-	// Max 137.5MHz
+	// Configured for 130MHz
 	static constexpr uint32_t Apb1 = Ahb / 2; // D2PPRE1
 	static constexpr uint32_t Apb2 = Ahb / 2; // D2PPRE2
 	static constexpr uint32_t Apb3 = Ahb / 2; // D1PPRE
@@ -122,12 +122,12 @@ struct SystemClock
 
 		Rcc::enableExternalClock(); // 8 MHz
 		const Rcc::PllFactors pllFactors1{
-			.range = Rcc::PllInputRange::MHz1_2,
+			.range = Rcc::PllInputRange::MHz2_4,
 			.pllM  = 4,		//   8 MHz / 4   =   2 MHz
-			.pllN  = 275,	//   2 MHz * 275 = 550 MHz
-			.pllP  = 1,		// 550 MHz / 1   = 550 MHz
-			.pllQ  = 4,		// 550 MHz / 4   = 137.5 MHz
-			.pllR  = 2,		// 550 MHz / 2   = 275 MHz
+			.pllN  = 260,	//   2 MHz * 260 = 520 MHz
+			.pllP  = 1,		// 520 MHz / 1   = 520 MHz
+			.pllQ  = 4,		// 520 MHz / 4   = 130 MHz
+			.pllR  = 2,		// 520 MHz / 2   = 260 MHz
 		};
 		Rcc::enablePll1(Rcc::PllSource::Hse, pllFactors1);
 
@@ -155,9 +155,9 @@ struct SystemClock
 		Rcc::enablePll3(Rcc::PllSource::ExternalClock, pllFactors3);
 		Rcc::setFlashLatency<Ahb>();
 
-		// max. 275MHz
+		// Configure AHB for 260MHz
 		Rcc::setAhbPrescaler(Rcc::AhbPrescaler::Div2);
-		// max. 137.5MHz on Apb clocks
+		// Configure APB clocks for 130MHz
 		Rcc::setApb1Prescaler(Rcc::Apb1Prescaler::Div2);
 		Rcc::setApb2Prescaler(Rcc::Apb2Prescaler::Div2);
 		Rcc::setApb3Prescaler(Rcc::Apb3Prescaler::Div2);

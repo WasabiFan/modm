@@ -18,6 +18,10 @@ def init(module):
 
 [Nucleo kit for STM32H723ZG](https://www.st.com/en/evaluation-tools/nucleo-h723zg.html)
 
+This BSP runs the core at 520MHz. Operation at 550MHz requires programming the
+`CPUFREQ_BOOST` option byte and disables ECC on the TCM RAMs, as described in
+the STM32H723 datasheet and RM0468.
+
 ## TinyUSB
 
 To use the USB port, you must configure TinyUSB to use the HS port in FS mode:

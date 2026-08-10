@@ -6,7 +6,7 @@
   </repositories>
 
   <options>
-    <option name="modm:target">stm32h723zgt6</option>
+    <option name="modm:target">stm32h723zgt6/revZ</option>
   </options>
   <modules>
     <module>modm:board:nucleo-h723zg</module>
