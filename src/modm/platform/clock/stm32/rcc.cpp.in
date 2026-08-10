@@ -522,6 +522,20 @@ Rcc::setVoltageScaling(VoltageScaling voltage, uint32_t waitCycles)
 bool
 Rcc::setVoltageScaling(VoltageScaling voltage, uint32_t waitCycles)
 {
+%% if target.name in ["42", "43", "50", "53"] and target.revision not in ["x", "v"]
+	if (voltage == VoltageScaling::Scale0) {
+		// ES0392 permits VOS0 only for target revisions X and V.
+		return false;
+	}
+%% endif
+
+%% if vos0_overdrive
+	// H74x/H75x VOS0 is available only when the LDO supplies VCORE.
+	if (voltage == VoltageScaling::Scale0 && !(PWR->CR3 & PWR_CR3_LDOEN)) {
+		return false;
+	}
+%% endif
+
 	const auto waitForActiveVoltage = [waitCycles]()
 	{
 		auto counter = waitCycles;
@@ -542,10 +556,6 @@ Rcc::setVoltageScaling(VoltageScaling voltage, uint32_t waitCycles)
 	__DSB();
 
 	if (voltage == VoltageScaling::Scale0) {
-		if (!(PWR->CR3 & PWR_CR3_LDOEN)) {
-			return false;
-		}
-
 		PWR->{{d3}}CR = static_cast<uint32_t>(VoltageScaling::Scale1);
 		if (!waitForActiveVoltage()) {
 			return false;
