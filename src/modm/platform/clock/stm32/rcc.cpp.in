@@ -564,14 +564,38 @@ Rcc::configurePowerSource(PowerSource source, uint32_t waitCycles)
 	constexpr auto mask = PWR_CR3_LDOEN |
 %% if has_smps
 		PWR_CR3_SMPSLEVEL | PWR_CR3_SMPSEXTHP | PWR_CR3_SMPSEN |
+%% else
+		PWR_CR3_SCUEN |
 %% endif
 		PWR_CR3_BYPASS;
+	const auto configuration = static_cast<uint32_t>(source);
 
-	PWR->CR3 = (PWR->CR3 & ~mask) | static_cast<uint32_t>(source);
+	PWR->CR3 = (PWR->CR3 & ~mask) | configuration;
 
-	// wait for power supply to be ready to set VOS setting
-	while(!(PWR->CSR1 & PWR_CSR1_ACTVOSRDY))
-		if (--waitCycles == 0) return false;
+	const auto waitForFlag = [waitCycles](volatile uint32_t &reg, uint32_t flag)
+	{
+		if (waitCycles == 0) {
+			while (!(reg & flag)) {}
+			return true;
+		}
+
+		auto counter = waitCycles;
+		while (!(reg & flag))
+			if (--counter == 0) return false;
+		return true;
+	};
+
+	if (!waitForFlag(PWR->CSR1, PWR_CSR1_ACTVOSRDY)) {
+		return false;
+	}
+
+%% if has_smps
+	if ((configuration & PWR_CR3_SMPSEXTHP) &&
+		!waitForFlag(PWR->CR3, PWR_CR3_SMPSEXTRDY))
+	{
+		return false;
+	}
+%% endif
 
 	return true;
 }
