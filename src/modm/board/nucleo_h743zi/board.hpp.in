@@ -112,7 +112,11 @@ struct SystemClock
 		Rcc::enableRealTimeClock(Rcc::RealTimeClockSource::LowSpeedExternalCrystal);
 
 		Rcc::enableExternalClock(); // 8 MHz
-		Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0); // required for 400MHz/480MHz
+		%% if board == "stm32h743zi"
+		Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale1);
+		%% else
+		Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0);
+		%% endif
 		const Rcc::PllFactors pllFactors1{
 			.range = Rcc::PllInputRange::MHz4_8,
 			.pllM = 2,		//   8MHz / M=   4MHz

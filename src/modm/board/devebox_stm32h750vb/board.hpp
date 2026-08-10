@@ -108,7 +108,7 @@ struct SystemClock
 		Rcc::enableRealTimeClock(Rcc::RealTimeClockSource::LowSpeedExternalCrystal);
 
 		Rcc::enableExternalCrystal(); // 25MHz
-		Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0); // required for 400MHz/480MHz
+		Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale1);
 		const Rcc::PllFactors pllFactors1{
 			.range = Rcc::PllInputRange::MHz8_16,
 			.pllM = 2,		//   25MHz / M= 12.5MHz
