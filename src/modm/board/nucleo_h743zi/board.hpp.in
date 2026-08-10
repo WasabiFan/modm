@@ -114,9 +114,11 @@ struct SystemClock
 
 		Rcc::enableExternalClock(); // 8 MHz
 		%% if board == "stm32h743zi"
-		Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale1);
+		modm_assert(Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale1),
+			"pwr.vos", "Failed to set VCORE voltage scale!");
 		%% else
-		Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0);
+		modm_assert(Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0),
+			"pwr.vos", "Failed to set VCORE voltage scale!");
 		%% endif
 		const Rcc::PllFactors pllFactors1{
 			.range = Rcc::PllInputRange::MHz4_8,

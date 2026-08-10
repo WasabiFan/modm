@@ -109,7 +109,8 @@ struct SystemClock
 		Rcc::enableRealTimeClock(Rcc::RealTimeClockSource::LowSpeedExternalCrystal);
 
 		Rcc::enableExternalCrystal(); // 25MHz
-		Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale1);
+		modm_assert(Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale1),
+			"pwr.vos", "Failed to set VCORE voltage scale!");
 		const Rcc::PllFactors pllFactors1{
 			.range = Rcc::PllInputRange::MHz8_16,
 			.pllM = 2,		//   25MHz / M= 12.5MHz

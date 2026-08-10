@@ -118,7 +118,8 @@ struct SystemClock
 
 		// Switch core supply voltage to maximum level
 		// Required for running at 550 MHz
-		Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0);
+		modm_assert(Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0),
+			"pwr.vos", "Failed to set VCORE voltage scale!");
 
 		Rcc::enableExternalClock(); // 8 MHz
 		const Rcc::PllFactors pllFactors1{
