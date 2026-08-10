@@ -23,6 +23,7 @@ Reset_Handler:
 	ldr r0,=__main_stack_limit
 	msr msplim,r0
 %% endif
+	bl __modm_initialize_board
 %% if with_fpu
 	// Enable FPU early so the compiler may use FPU registers for copying
 	// SCB->CPACR = ((3UL << 10*2) | (3UL << 11*2));
@@ -34,4 +35,11 @@ Reset_Handler:
 	bl modm_initialize_platform
 	ldr r0,=__modm_startup
 	bx r0
+	.endfunc
+
+.weak	__modm_initialize_board
+.type	__modm_initialize_board, %function
+.func	__modm_initialize_board
+__modm_initialize_board:
+	bx lr
 	.endfunc

@@ -15,49 +15,53 @@ After reset, the ARM Cortex-M hardware jumps to the `Reset_Handler()`, which is
 implemented as follows:
 
 1. The main stack pointer (MSP) is initialized by software.
-2. Call `__modm_initialize_platform()` to initialize the device hardware.
-3. Call `modm_initialize_platform()` to initialize the custom device hardware.
-4. Copy data to internal RAM.
-5. Zero sections in internal RAM.
-6. Initialize ARM Cortex-M core: enable FPU, caches and relocate vector table.
-7. Execute shared hardware initialization functions.
-8. Copy data to *external* RAM.
-9. Zero sections in *external* RAM.
-10. Initialize heap via `__modm_initialize_memory()` (implemented by the
+2. Call `__modm_initialize_board()` to initialize board hardware that must be
+   configured without accessing RAM.
+3. Call `__modm_initialize_platform()` to initialize the device hardware.
+4. Call `modm_initialize_platform()` to initialize the custom device hardware.
+5. Copy data to internal RAM.
+6. Zero sections in internal RAM.
+7. Initialize ARM Cortex-M core: enable FPU, caches and relocate vector table.
+8. Execute shared hardware initialization functions.
+9. Copy data to *external* RAM.
+10. Zero sections in *external* RAM.
+11. Initialize heap via `__modm_initialize_memory()` (implemented by the
     `modm:platform:heap` module).
-11. Call static constructors.
-12. Call `main()` application entry point.
-13. If `main()` returns, assert on `main.exit` (only in debug profile).
-14. Reboot if assertion returns.
+12. Call static constructors.
+13. Call `main()` application entry point.
+14. If `main()` returns, assert on `main.exit` (only in debug profile).
+15. Reboot if assertion returns.
 
 
 ### Device Initialization
 
-The `__modm_initialize_platform()` function is called *directly* after reset,
-and its purpose is to initialize the device specific hardware, such as enable
-internal memories or disable the hardware watchdog timer. You can provide
-additional application-specific initialization by overwriting the weakly linked
-`modm_initialize_platform()` function:
+The weak `__modm_initialize_board()` hook runs before the device initialization
+function and before any C code. Board support packages may override it when
+hardware must be configured before RAM is accessible. Such implementations must
+be written in Assembly, must not use the stack, and must return with `bx lr`.
+
+The internal `__modm_initialize_platform()` function runs after the board hook
+and initializes device-specific hardware, such as internal memories or the
+hardware watchdog. You can provide additional application-specific
+initialization by overriding the weakly linked `modm_initialize_platform()`
+function:
 
 ```c
 extern "C" void modm_initialize_platform()
 {
-    // Configure power settings before accessing SRAM
+    // Configure hardware without using initialized data
 }
 ```
 
-It's important to understand that because the `.data` section has not yet been
-copied and the `.bss` section has not yet been zeroed, **there exists no valid C
-environment yet in this function context**! This means you cannot use any global
-variables, not even "local" static  ones defined in your function, and depending
-on your hardware you may not even access read-only data (`const` variables,
-global OR local). In addition, if your linkerscript places the main stack
-pointer into a memory that is disabled on reset, you cannot even access the
-stack until you've enabled its backing memory. The `Reset_Handler` therefore
-calls this function in Assembly without accessing the stack.
+The `.data` section has not yet been copied and the `.bss` section has not yet
+been zeroed, so neither C function may use global or static variables. Read-only
+data may also be unavailable on some hardware. The C functions may use the
+stack only after the board hook has made its backing memory accessible.
 
-It is strongly recommended to only read/write registers in this function, and
-perhaps even write this function in Assembly if deemed necessary.
+Power, memory, or other setup required before stack access belongs in
+`__modm_initialize_board()` and must be implemented in stack-independent
+Assembly. The later C hook is intended for register configuration that can use
+an already accessible stack.
 
 
 ### Cache Initialization
