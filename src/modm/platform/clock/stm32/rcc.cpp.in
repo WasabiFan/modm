@@ -522,37 +522,57 @@ Rcc::setVoltageScaling(VoltageScaling voltage, uint32_t waitCycles)
 bool
 Rcc::setVoltageScaling(VoltageScaling voltage, uint32_t waitCycles)
 {
-	auto waitCounter = waitCycles;
-	// wait for power supply to be ready to set VOS setting
-	while(!(PWR->CSR1 & PWR_CSR1_ACTVOSRDY))
-		if (--waitCounter == 0) return false;
+	const auto waitForActiveVoltage = [waitCycles]()
+	{
+		auto counter = waitCycles;
+		while (!(PWR->CSR1 & PWR_CSR1_ACTVOSRDY))
+			if (--counter == 0) return false;
+		return true;
+	};
+
+	if (!waitForActiveVoltage()) {
+		return false;
+	}
+	if ((PWR->CSR1 & PWR_CSR1_ACTVOS) == static_cast<uint32_t>(voltage)) {
+		return true;
+	}
 
 %% if vos0_overdrive
-	if (voltage == VoltageScaling::Scale0) {
-		// set VOS1
-		waitCounter = waitCycles;
-		PWR->{{d3}}CR = static_cast<uint32_t>(VoltageScaling::Scale1);
-		while (!(PWR->{{d3}}CR & PWR_{{d3}}CR_VOSRDY))
-			if (--waitCounter == 0) return false;
+	RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;
+	__DSB();
 
-		// set overdrive
+	if (voltage == VoltageScaling::Scale0) {
+		if (!(PWR->CR3 & PWR_CR3_LDOEN)) {
+			return false;
+		}
+
+		PWR->{{d3}}CR = static_cast<uint32_t>(VoltageScaling::Scale1);
+		if (!waitForActiveVoltage()) {
+			return false;
+		}
+
 		SYSCFG->PWRCR |= SYSCFG_PWRCR_ODEN;
-		while (!(PWR->{{d3}}CR & PWR_{{d3}}CR_VOSRDY))
-			if (--waitCycles == 0) return false;
+		if (!waitForActiveVoltage()) {
+			return false;
+		}
 	} else {
-		// disable overdrive
-		SYSCFG->PWRCR &= ~SYSCFG_PWRCR_ODEN;
-		// set voltage scale
+		if (SYSCFG->PWRCR & SYSCFG_PWRCR_ODEN) {
+			SYSCFG->PWRCR &= ~SYSCFG_PWRCR_ODEN;
+			if (!waitForActiveVoltage()) {
+				return false;
+			}
+		}
+
 		PWR->{{d3}}CR = static_cast<uint32_t>(voltage);
-		while (!(PWR->{{d3}}CR & PWR_{{d3}}CR_VOSRDY))
-			if (--waitCycles == 0) return false;
+		if (!waitForActiveVoltage()) {
+			return false;
+		}
 	}
 %% else
-	// set voltage scale
 	PWR->{{d3}}CR = static_cast<uint32_t>(voltage);
-	waitCounter = waitCycles;
-	while (!(PWR->{{d3}}CR & PWR_{{d3}}CR_VOSRDY))
-		if (--waitCycles == 0) return false;
+	if (!waitForActiveVoltage()) {
+		return false;
+	}
 %% endif
 
 	return true;
