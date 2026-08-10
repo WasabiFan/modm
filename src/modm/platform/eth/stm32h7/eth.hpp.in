@@ -18,6 +18,7 @@
 #include <modm/architecture/interface/atomic_lock.hpp>
 #include <modm/architecture/interface/ethernet.hpp>
 #include <modm/architecture/utils.hpp>
+#include <modm/debug/logger.hpp>
 #include <modm/math/utils/bit_constants.hpp>
 #include <modm/processing/fiber.hpp>
 #include "../device.hpp"
@@ -28,6 +29,7 @@
 #include <cstdint>
 #include <cstring>
 #include <optional>
+#include <source_location>
 #include <span>
 #include <type_traits>
 #include <utility>
@@ -686,7 +688,8 @@ private:
 	static uint32_t captureLiveDmaStatus(bool running);
 	static bool latchPendingFatalBusError();
 	static LinkUpdateError faultError();
-	static LinkUpdateError stopTimeoutError();
+	static LinkUpdateError stopTimeoutError(
+			std::source_location location = std::source_location::current());
 	static void setDriverFailure(DriverFailure failure);
 
 	static bool waitForTransmitDmaSuspend();

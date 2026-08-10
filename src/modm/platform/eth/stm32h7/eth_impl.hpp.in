@@ -559,8 +559,19 @@ EthernetMac::waitForTransmitQueueFlush()
 }
 
 inline EthernetMac::LinkUpdateError
-EthernetMac::stopTimeoutError()
+EthernetMac::stopTimeoutError(std::source_location location)
 {
+	MODM_LOG_ERROR << "Ethernet MAC stop timeout at " << location.function_name()
+			<< ':' << location.line()
+			<< ": DMACTCR=0x" << modm::hex << uint32_t(ETH->DMACTCR)
+			<< " DMACRCR=0x" << uint32_t(ETH->DMACRCR)
+			<< " DMADSR=0x" << uint32_t(ETH->DMADSR)
+			<< " MTLTQOMR=0x" << uint32_t(ETH->MTLTQOMR)
+			<< " MTLTQDR=0x" << uint32_t(ETH->MTLTQDR)
+			<< " MTLRQDR=0x" << uint32_t(ETH->MTLRQDR)
+			<< " MACCR=0x" << uint32_t(ETH->MACCR)
+			<< " MACDR=0x" << uint32_t(ETH->MACDR)
+			<< modm::ascii << modm::endl;
 	modm::atomic::Lock lock;
 	if (latchPendingFatalBusError())
 		return LinkUpdateError::FatalBusError;
@@ -627,6 +638,38 @@ EthernetMac::notifyUpdatedLinkStatus(LinkStatus observed)
 			return {currentLinkStatus(), LinkUpdateError::FatalBusError};
 		if (driverState() == DriverState::Faulted)
 			return {currentLinkStatus(), faultError()};
+	}
+
+	const LinkStatus previous = currentLinkStatus();
+	const bool observedModeChanged = observed.mode and
+			(observed.mode->speed != state().speed or
+			 observed.mode->duplex != state().duplexMode);
+	if (observed.state != previous.state or observedModeChanged) {
+		const auto stateName = [](LinkState linkState) {
+			switch (linkState) {
+				case LinkState::Down: return "down";
+				case LinkState::Negotiating: return "negotiating";
+				case LinkState::Up: return "up";
+			}
+			return "unknown";
+		};
+		const auto speedName = [](Speed speed) {
+			return speed == Speed::Speed100M ? "100M" : "10M";
+		};
+		const auto duplexName = [](DuplexMode duplex) {
+			return duplex == DuplexMode::Full ? "full" : "half";
+		};
+		MODM_LOG_INFO << "Ethernet link update: " << stateName(previous.state);
+		if (previous.mode) {
+			MODM_LOG_INFO << ' ' << speedName(previous.mode->speed)
+					<< ' ' << duplexName(previous.mode->duplex);
+		}
+		MODM_LOG_INFO << " -> " << stateName(observed.state);
+		if (observed.mode) {
+			MODM_LOG_INFO << ' ' << speedName(observed.mode->speed)
+					<< ' ' << duplexName(observed.mode->duplex);
+		}
+		MODM_LOG_INFO << modm::endl;
 	}
 
 	if (observed.state != LinkState::Up) {
