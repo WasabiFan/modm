@@ -538,6 +538,10 @@ Rcc::setVoltageScaling(VoltageScaling voltage, uint32_t waitCycles)
 
 	const auto waitForActiveVoltage = [waitCycles]()
 	{
+		if (waitCycles == 0) {
+			return bool(PWR->CSR1 & PWR_CSR1_ACTVOSRDY);
+		}
+
 		auto counter = waitCycles;
 		while (!(PWR->CSR1 & PWR_CSR1_ACTVOSRDY))
 			if (--counter == 0) return false;
@@ -585,7 +589,7 @@ Rcc::setVoltageScaling(VoltageScaling voltage, uint32_t waitCycles)
 	}
 %% endif
 
-	return true;
+	return (PWR->CSR1 & PWR_CSR1_ACTVOS) == static_cast<uint32_t>(voltage);
 }
 
 bool
@@ -601,6 +605,9 @@ Rcc::configurePowerSource(PowerSource source, uint32_t waitCycles)
 	const auto configuration = static_cast<uint32_t>(source);
 
 	PWR->CR3 = (PWR->CR3 & ~mask) | configuration;
+	if ((PWR->CR3 & mask) != configuration) {
+		return false;
+	}
 
 	const auto waitForFlag = [waitCycles](volatile uint32_t &reg, uint32_t flag)
 	{
