@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026, Niklas Hauser
+ *
+ * This file is part of the modm project.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+// ----------------------------------------------------------------------------
+
+.equ	PWR_BASE, 0x58024800
+.equ	PWR_CSR1_OFFSET, 0x04
+.equ	PWR_CR3_OFFSET, 0x0c
+.equ	PWR_CR3_SUPPLY_MASK, 0x07
+.equ	PWR_CR3_LDO, 0x02
+.equ	PWR_CSR1_ACTVOSRDY, 0x2000
+
+.globl	__modm_initialize_board
+	.text
+	.syntax	unified
+	.align	2
+	.type	__modm_initialize_board, %function
+	.func	__modm_initialize_board
+__modm_initialize_board:
+	// {{ schematic }} connects VDDLDO and decouples VCAP for the internal LDO.
+	ldr r0,=PWR_BASE
+	ldr r1,[r0,#PWR_CR3_OFFSET]
+	bic r1,r1,#PWR_CR3_SUPPLY_MASK
+	orr r1,r1,#PWR_CR3_LDO
+	str r1,[r0,#PWR_CR3_OFFSET]
+
+	// The supply fields are write-once; fail-stop if another topology is locked.
+	ldr r1,[r0,#PWR_CR3_OFFSET]
+	and r1,r1,#PWR_CR3_SUPPLY_MASK
+	cmp r1,#PWR_CR3_LDO
+	bne .Lpower_configuration_failed
+
+.Lwait_for_active_voltage:
+	ldr r1,[r0,#PWR_CSR1_OFFSET]
+	tst r1,#PWR_CSR1_ACTVOSRDY
+	beq .Lwait_for_active_voltage
+	bx lr
+
+.Lpower_configuration_failed:
+	b .Lpower_configuration_failed
+	.endfunc

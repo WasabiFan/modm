@@ -62,5 +62,8 @@ def build(env):
 
     env.template("../board.cpp.in", "board.cpp")
     env.template("board.hpp.in")
+    env.template("../stm32h7_ldo_startup.sx.in", "startup.sx", substitutions={
+        "schematic": "MB1137-H743ZI-B01 schematic"
+    })
     env.copy("../nucleo144_arduino.hpp", "nucleo144_arduino.hpp")
     env.collect(":build:openocd.source", "board/st_nucleo_h743zi.cfg")
