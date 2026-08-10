@@ -33,6 +33,7 @@ struct SystemClock
 	// NOTE: revision Y at 400MHz, only revision V runs at 480Mhz!!!
 	// some of the devebox boards including the original one have the Y version!!!
 	static constexpr uint32_t SysClk = 400_MHz;
+	static constexpr uint32_t Pll1Q = SysClk / 10;
 	// Max 400MHz or 480MHz
 	static constexpr uint32_t Hclk = SysClk / 1; // D1CPRE
 	static constexpr uint32_t Frequency = Hclk;
@@ -54,9 +55,9 @@ struct SystemClock
 
 	static constexpr uint32_t Dac1 = Apb1;
 
-	static constexpr uint32_t Spi1 = Apb2;
-	static constexpr uint32_t Spi2 = Apb1;
-	static constexpr uint32_t Spi3 = Apb1;
+	static constexpr uint32_t Spi1 = Pll1Q;
+	static constexpr uint32_t Spi2 = Pll1Q;
+	static constexpr uint32_t Spi3 = Pll1Q;
 	static constexpr uint32_t Spi4 = Apb2;
 	static constexpr uint32_t Spi5 = Apb2;
 	static constexpr uint32_t Spi6 = Apb4;
