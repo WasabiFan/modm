@@ -359,10 +359,10 @@ EthernetMac::stop()
 		return stopTimeoutError();
 	}
 
-	requestTransmitQueueFlush();
-	if (not waitForTransmitQueueFlush()) {
-		return stopTimeoutError();
-	}
+	// requestTransmitQueueFlush();
+	// if (not waitForTransmitQueueFlush()) {
+	// 	return stopTimeoutError();
+	// }
 	ETH->MACCR &= ~ETH_MACCR_TE;
 	ETH->DMACSR = ETH_DMACSR_TPS | ETH_DMACSR_RPS;
 	{
