@@ -13,27 +13,15 @@
 def init(module):
     module.name = ":board:devebox-stm32h750vb"
     module.description = """
-# STM32F750VB mcudev DevEBox
+# STM32H750VB mcudev DevEBox
 
-[STM32F750VB mcudev DevEBox H7xx](https://github.com/mcauser/MCUDEV_DEVEBOX_H7XX_M)
+[STM32H750VB mcudev DevEBox H7xx](https://github.com/mcauser/MCUDEV_DEVEBOX_H7XX_M)
 
-Please note that this BSP uses the Y revision of the STM32H750, which limits the
-main clock frequency to ≤400MHz and applies an errata bug fix to the SysTick,
-whose reference clock cannot be divided by 8.
+This BSP targets revision Y of the STM32H750 and configures the core for
+400MHz at VOS1. The same conservative operating point is valid on later
+silicon revisions.
 
-See the [STM32H750 errata sheet](https://www.st.com/resource/en/errata_sheet/es0396-stm32h750xb-and-stm32h753xi-device-limitations-stmicroelectronics.pdf#page=12).
-
-In case you are using the new revision V of STM32H750, you can overwrite the
-target option in your `project.xml`:
-
-```xml
-<library>
-  <extends>modm:devebox-stm32h750vb</extends>
-  <options>
-    <option name="modm:target">stm32h750vbt6/revV</option>
-  </options>
-</library>
-```
+See the [STM32H750 errata sheet](https://www.st.com/resource/en/errata_sheet/es0392-stm32h742x743xig-st32h750xb-and-stm32h753xi-device-errata-stmicroelectronics.pdf).
 
 This board has no serial port and logs via RTT instead.
 """
@@ -60,7 +48,8 @@ def build(env):
     }
     env.template("../board.cpp.in", "board.cpp")
     env.template("../stm32h7_ldo_startup.sx.in", "startup.sx", substitutions={
-        "schematic": "MCUDEV DevEBox STM32H7XX_M schematic"
+        "schematic": "MCUDEV DevEBox STM32H7XX_M schematic",
+        "reference_manual": "RM0433"
     })
     env.copy('.')
 

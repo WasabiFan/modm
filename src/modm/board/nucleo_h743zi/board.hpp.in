@@ -26,28 +26,30 @@ namespace Board
 /// @{
 using namespace modm::literals;
 
-/// STM32H743 running at 400MHz from the external 8MHz HSE
+%% if board == "stm32h743zi"
+/// STM32H743 revision Y running at 400MHz from the external 8MHz HSE
+%% elif board == "nucleo-h753zi"
+/// STM32H753 revision V running at 480MHz from the external 8MHz HSE
+%% else
+/// STM32H743 revision V running at 480MHz from the external 8MHz HSE
+%% endif
 struct SystemClock
 {
 	static constexpr uint32_t Hse = 8_MHz;
 	%% if board == "stm32h743zi"
-	// NOTE: revision Y at 400MHz, only revision V runs at 480Mhz!!!
 	static constexpr uint32_t SysClk = 400_MHz;
 	%% else
 	static constexpr uint32_t SysClk = 480_MHz;
 	%% endif
 	static constexpr uint32_t Pll1Q = SysClk / 10;
 	static constexpr uint32_t Pll2Q = 120_MHz;
-	// Max 400MHz or 480MHz
 	static constexpr uint32_t Hclk = SysClk / 1; // D1CPRE
 	static constexpr uint32_t Frequency = Hclk;
-	// Max 200MHz or 240MHz
 	static constexpr uint32_t Ahb = Hclk / 2; // HPRE
 	static constexpr uint32_t Ahb1 = Ahb;
 	static constexpr uint32_t Ahb2 = Ahb;
 	static constexpr uint32_t Ahb3 = Ahb;
 	static constexpr uint32_t Ahb4 = Ahb;
-	// Max 100MHz or 120MHz
 	static constexpr uint32_t Apb1 = Ahb / 2; // D2PPRE1
 	static constexpr uint32_t Apb2 = Ahb / 2; // D2PPRE2
 	static constexpr uint32_t Apb3 = Ahb / 2; // D1PPRE
@@ -59,6 +61,7 @@ struct SystemClock
 
 	static constexpr uint32_t Dac1 = Apb1;
 
+	// RCC_D2CCIP1R.SPI123SEL resets to PLL1Q (RM0433).
 	static constexpr uint32_t Spi1 = Pll1Q;
 	static constexpr uint32_t Spi2 = Pll1Q;
 	static constexpr uint32_t Spi3 = Pll1Q;
@@ -114,9 +117,15 @@ struct SystemClock
 
 		Rcc::enableExternalClock(); // 8 MHz
 		%% if board == "stm32h743zi"
+		// Revision Y supports 400MHz at VOS1; VOS0 is unavailable. Rcc waits
+		// for the RM0433 transition before the system clock is increased.
+		// See STM32H743 datasheet, AN5312, and errata sheet ES0392.
 		modm_assert(Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale1),
 			"pwr.vos", "Failed to set VCORE voltage scale!");
 		%% else
+		// Revision V requires VOS0 and Tj <= 105C for 480MHz. Rcc completes
+		// the RM0433 transition before the system clock is increased.
+		// See STM32H743/753 datasheet, AN5312, and errata sheet ES0392.
 		modm_assert(Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0),
 			"pwr.vos", "Failed to set VCORE voltage scale!");
 		%% endif
@@ -126,11 +135,11 @@ struct SystemClock
 			%% if board == "stm32h743zi"
 			.pllN = 100,	//   4MHz * N= 400MHz
 			%% else
-			.pllN = 120,
+			.pllN = 120,	//   4MHz * N= 480MHz
 			%% endif
-			.pllP = 1,		// 400MHz / P= 400MHz = F_cpu
-			.pllQ = 10,		// 400MHz / Q=  40MHz
-			.pllR = 10,		// 400MHz / R=  40MHz
+			.pllP = 1,		// SysClk / P= SysClk = F_cpu
+			.pllQ = 10,		// SysClk / Q= 40MHz or 48MHz
+			.pllR = 10,		// SysClk / R= 40MHz or 48MHz
 		};
 		Rcc::enablePll1(Rcc::PllSource::ExternalClock, pllFactors1);
 

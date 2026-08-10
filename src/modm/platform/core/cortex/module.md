@@ -4,7 +4,7 @@ This module generates the startup code, vector table, linkerscript as well as
 initialize the heap, deal with assertions, provide blocking delay functions,
 atomic and unaligned access and the GNU build ID.
 
-Since this is only initializes the generic ARM Cortex-M parts, it delegates
+Since this initializes only the generic ARM Cortex-M parts, it delegates
 device-specific initialization to the `modm:platform:core` module. Please depend
 on that module directly instead of this one.
 
@@ -17,16 +17,17 @@ implemented as follows:
 1. The main stack pointer (MSP) is initialized by software.
 2. Call `__modm_initialize_board()` to initialize board hardware that must be
    configured without accessing RAM.
-3. Call `__modm_initialize_platform()` to initialize the device hardware.
-4. Call `modm_initialize_platform()` to initialize the custom device hardware.
-5. Copy data to internal RAM.
-6. Zero sections in internal RAM.
-7. Initialize ARM Cortex-M core: enable FPU, caches and relocate vector table.
+3. Enable the FPU, if present.
+4. Call `__modm_initialize_platform()` to initialize the device hardware.
+5. Call `modm_initialize_platform()` to initialize the custom device hardware.
+6. Configure caches for startup, copy data to internal RAM, and zero sections
+   in internal RAM.
+7. Relocate the vector table and configure core traps.
 8. Execute shared hardware initialization functions.
-9. Copy data to *external* RAM.
-10. Zero sections in *external* RAM.
-11. Initialize heap via `__modm_initialize_memory()` (implemented by the
+9. Copy data to *external* RAM and zero sections in *external* RAM.
+10. Initialize heap via `__modm_initialize_memory()` (implemented by the
     `modm:platform:heap` module).
+11. Enable the data cache, if configured.
 12. Call static constructors.
 13. Call `main()` application entry point.
 14. If `main()` returns, assert on `main.exit` (only in debug profile).

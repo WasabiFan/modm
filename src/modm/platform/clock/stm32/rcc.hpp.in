@@ -1058,7 +1058,22 @@ public:
 %% endif
 	};
 
-	/// Configure power source, has to be called exactly once early on start-up
+	/**
+	 * Configure the system supply and leave limited Run* mode.
+	 *
+	 * PWR_CR3 supply fields are write-once after power-on reset and system
+	 * startup requires them to be configured before accessing RAM or changing
+	 * VOS. The function waits for ACTVOSRDY, and for SMPSEXTRDY when the SMPS
+	 * supplies external loads.
+	 * Cold-reset BSPs must perform the operation in the stack-independent board
+	 * hook because this C++ function is not guaranteed to be stack-free.
+	 *
+	 * A zero wait count waits indefinitely. A nonzero count returns false on
+	 * timeout or when an earlier boot stage locked a different topology.
+	 *
+	 * See the applicable H7 reference manual (RM0399, RM0433, RM0455, RM0468,
+	 * or RM0477), "System supply startup".
+	 */
 	static bool
 	configurePowerSource(PowerSource source, uint32_t waitCycles = 2048);
 %% endif
@@ -1091,6 +1106,30 @@ public:
 %% endif
 
 %% if target.family in ["h7", "l5", "u5"] or has_r1mode
+%% if target.family == "h7"
+	/**
+	 * Change the VCORE voltage scaling level.
+	 *
+	 * Increase VOS and wait for success before raising clocks. Lower clocks
+	 * before requesting a lower VOS. H742/H743/H750/H753 VOS0 requires target
+	 * revision /revX or /revV; missing and unrecognized revisions are rejected.
+	 * H74x/H75x VOS0 requires LDO supply and SYSCFG overdrive; both the
+	 * intermediate VOS1 step and readiness waits are handled here. Leave VOS0
+	 * before entering Stop, Standby, or another deep-sleep mode that does not
+	 * support it.
+	 *
+	 * A zero wait count only checks the current readiness state. Returns false
+	 * on timeout, unsupported target revision or topology, or final-state
+	 * mismatch. A
+	 * timeout may leave a voltage transition or overdrive change in progress;
+	 * this function does not roll back a partial transition. The caller must
+	 * observe the selected device's temperature and sales-grade limits.
+	 *
+	 * See the applicable H7 reference manual (RM0399, RM0433, RM0455, RM0468,
+	 * or RM0477), particularly "VOS0 activation/deactivation sequence" or
+	 * "Dynamic voltage scaling in Run mode".
+	 */
+%% endif
 	static bool
 	setVoltageScaling(VoltageScaling voltage, uint32_t waitCycles = 2048);
 %% endif

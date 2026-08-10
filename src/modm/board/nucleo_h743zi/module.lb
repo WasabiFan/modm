@@ -18,23 +18,14 @@ def init(module):
 
 [Nucleo kit for STM32H743ZI](https://www.st.com/en/evaluation-tools/nucleo-h743zi.html)
 
-Please note that this BSP uses the Y revision of the STM32H743, which limits the
-main clock frequency to ≤400MHz and applies an errata bug fix to the SysTick,
-whose reference clock cannot be divided by 8.
+This BSP targets revision Y of the STM32H743 and configures the core for
+400MHz at VOS1. The same conservative operating point is valid on later
+silicon revisions.
 
-See the [STM32H743 errata sheet](https://www.st.com/resource/en/errata_sheet/es0392-stm32h742xig-and-stm32h743xig-device-limitations-stmicroelectronics.pdf).
+See the [STM32H743 errata sheet](https://www.st.com/resource/en/errata_sheet/es0392-stm32h742x743xig-st32h750xb-and-stm32h753xi-device-errata-stmicroelectronics.pdf).
 
-In case you are using the new revision V of STM32H743, you can overwrite the
-target option in your `project.xml`:
-
-```xml
-<library>
-  <extends>modm:nucleo-h743zi</extends>
-  <options>
-    <option name="modm:target">stm32h743zit6/revV</option>
-  </options>
-</library>
-```
+Use the NUCLEO-H743ZI2 BSP for the revision-V MB1364 board and its 480MHz
+configuration.
 """
 
 def prepare(module, options):
@@ -63,7 +54,8 @@ def build(env):
     env.template("../board.cpp.in", "board.cpp")
     env.template("board.hpp.in")
     env.template("../stm32h7_ldo_startup.sx.in", "startup.sx", substitutions={
-        "schematic": "MB1137-H743ZI-B01 schematic"
+        "schematic": "MB1137-H743ZI-B01 schematic",
+        "reference_manual": "RM0433"
     })
     env.copy("../nucleo144_arduino.hpp", "nucleo144_arduino.hpp")
     env.collect(":build:openocd.source", "board/st_nucleo_h743zi.cfg")

@@ -30,20 +30,16 @@ using namespace modm::literals;
 /// STM32H750 running at 400MHz from the external 25MHz HSE
 struct SystemClock
 {
-	// NOTE: revision Y at 400MHz, only revision V runs at 480Mhz!!!
-	// some of the devebox boards including the original one have the Y version!!!
+	// This BSP targets revision Y and its 400MHz operating limit.
 	static constexpr uint32_t SysClk = 400_MHz;
 	static constexpr uint32_t Pll1Q = SysClk / 10;
-	// Max 400MHz or 480MHz
 	static constexpr uint32_t Hclk = SysClk / 1; // D1CPRE
 	static constexpr uint32_t Frequency = Hclk;
-	// Max 200MHz or 240MHz
 	static constexpr uint32_t Ahb = Hclk / 2; // HPRE
 	static constexpr uint32_t Ahb1 = Ahb;
 	static constexpr uint32_t Ahb2 = Ahb;
 	static constexpr uint32_t Ahb3 = Ahb;
 	static constexpr uint32_t Ahb4 = Ahb;
-	// Max 100MHz or 120MHz
 	static constexpr uint32_t Apb1 = Ahb / 2; // D2PPRE1
 	static constexpr uint32_t Apb2 = Ahb / 2; // D2PPRE2
 	static constexpr uint32_t Apb3 = Ahb / 2; // D1PPRE
@@ -55,6 +51,7 @@ struct SystemClock
 
 	static constexpr uint32_t Dac1 = Apb1;
 
+	// RCC_D2CCIP1R.SPI123SEL resets to PLL1Q (RM0433).
 	static constexpr uint32_t Spi1 = Pll1Q;
 	static constexpr uint32_t Spi2 = Pll1Q;
 	static constexpr uint32_t Spi3 = Pll1Q;
@@ -109,6 +106,9 @@ struct SystemClock
 		Rcc::enableRealTimeClock(Rcc::RealTimeClockSource::LowSpeedExternalCrystal);
 
 		Rcc::enableExternalCrystal(); // 25MHz
+		// Revision Y supports 400MHz at VOS1; VOS0 is unavailable. Rcc waits
+		// for the RM0433 transition before the system clock is increased.
+		// See STM32H750 datasheet, AN5312, and errata sheet ES0392.
 		modm_assert(Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale1),
 			"pwr.vos", "Failed to set VCORE voltage scale!");
 		const Rcc::PllFactors pllFactors1{

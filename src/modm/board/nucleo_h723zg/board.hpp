@@ -116,8 +116,8 @@ struct SystemClock
 		Rcc::enableLowSpeedExternalCrystal();
 		Rcc::enableRealTimeClock(Rcc::RealTimeClockSource::LowSpeedExternalCrystal);
 
-		// Switch core supply voltage to maximum level
-		// Required for running at 550 MHz
+		// 520MHz requires VOS0 and Tj <= 105C. Rcc completes the RM0468
+		// transition before PLL1 raises the system clock. See DS13313.
 		modm_assert(Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0),
 			"pwr.vos", "Failed to set VCORE voltage scale!");
 

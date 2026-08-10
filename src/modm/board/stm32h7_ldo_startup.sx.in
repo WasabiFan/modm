@@ -23,20 +23,27 @@
 	.type	__modm_initialize_board, %function
 	.func	__modm_initialize_board
 __modm_initialize_board:
-	// {{ schematic }} connects VDDLDO and decouples VCAP for the internal LDO.
+	// {{ schematic }} supplies VDDLDO and decouples both VCAP pins, therefore
+	// the internal LDO must supply VCORE.
+	// {{ reference_manual }} "System supply startup" requires PWR_CR3 to be
+	// configured while in Run*. RAM writes and VOS changes are prohibited until
+	// ACTVOSRDY is set, so this function must remain stack-independent.
 	ldr r0,=PWR_BASE
 	ldr r1,[r0,#PWR_CR3_OFFSET]
+	// Clear the write-once SCUEN, LDOEN, and BYPASS fields, then select LDO.
 	bic r1,r1,#PWR_CR3_SUPPLY_MASK
 	orr r1,r1,#PWR_CR3_LDO
 	str r1,[r0,#PWR_CR3_OFFSET]
 
-	// The supply fields are write-once; fail-stop if another topology is locked.
+	// A system reset does not reopen the write-once fields. Fail-stop if an
+	// earlier boot stage locked a topology that does not match the board.
 	ldr r1,[r0,#PWR_CR3_OFFSET]
 	and r1,r1,#PWR_CR3_SUPPLY_MASK
 	cmp r1,#PWR_CR3_LDO
 	bne .Lpower_configuration_failed
 
 .Lwait_for_active_voltage:
+	// Wait without a timeout because assertion handling requires valid RAM.
 	ldr r1,[r0,#PWR_CSR1_OFFSET]
 	tst r1,#PWR_CSR1_ACTVOSRDY
 	beq .Lwait_for_active_voltage
