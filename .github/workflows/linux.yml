@@ -82,6 +82,8 @@ jobs:
           (cd test && make compile-nucleo-f767zi)
           (cd test && make compile-nucleo-g474re)
           (cd test && make compile-nucleo-h723zg)
+          (cd test && make compile-nucleo-h743zi2)
+          (cd test && make compile-nucleo-h753zi)
           (cd test && make compile-nucleo-l432kc)
           (cd test && make compile-nucleo-l496zg-p)
           (cd test && make compile-nucleo-l552ze-q)

@@ -115,6 +115,16 @@ compile-nucleo-h723zg:
 run-nucleo-h723zg:
 	$(call run-test,nucleo-h723zg,size)
 
+compile-nucleo-h743zi2:
+	$(call compile-test,nucleo-h743zi2,size)
+run-nucleo-h743zi2:
+	$(call run-test,nucleo-h743zi2,size)
+
+compile-nucleo-h753zi:
+	$(call compile-test,nucleo-h753zi,size)
+run-nucleo-h753zi:
+	$(call run-test,nucleo-h753zi,size)
+
 
 compile-nucleo-l432kc:
 	$(call compile-test,nucleo-l432kc,size)
